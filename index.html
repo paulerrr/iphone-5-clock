@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Clock">
+    <meta name="format-detection" content="telephone=no">
+    <title>iPhone 5 Clock</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            /* iPhone 5 has 1136x640 resolution */
+            max-width: 640px;
+            max-height: 1136px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .clock-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .time {
+            font-size: 5rem;
+            font-weight: 200;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .date {
+            font-size: 1.5rem;
+            font-weight: 300;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .seconds {
+            font-size: 3rem;
+            font-weight: 200;
+            margin-top: 10px;
+        }
+        
+        .settings {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .settings-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 10;
+        }
+        
+        .settings-panel.active {
+            display: flex;
+        }
+        
+        .settings-option {
+            margin: 10px 0;
+            width: 80%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .settings-option label {
+            font-size: 1.2rem;
+        }
+        
+        .close-settings {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .color-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 5px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .color-option.active {
+            border-color: white;
+        }
+        
+        /* Landscape orientation adjustments for iPhone 5 */
+        @media screen and (orientation: landscape) {
+            .time {
+                font-size: 3.5rem;
+            }
+            
+            .date {
+                font-size: 1.2rem;
+            }
+            
+            .seconds {
+                font-size: 2rem;
+            }
+        }
+        
+        /* Full screen button */
+        .fullscreen-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            opacity: 0.5;
+        }
+        
+        /* Night mode */
+        .night-mode {
+            background-color: #000;
+            color: #c00;
+        }
+        
+        /* Battery indicator */
+        .battery-indicator {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .battery-level {
+            width: 30px;
+            height: 15px;
+            border: 1px solid currentColor;
+            margin-left: 5px;
+            position: relative;
+        }
+        
+        .battery-level:after {
+            content: '';
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            height: 11px;
+            background-color: currentColor;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="battery-indicator">
+            <span id="battery-percentage">--</span>
+            <div class="battery-level" id="battery-level"></div>
+        </div>
+        
+        <div class="clock-container">
+            <div class="date" id="date">Monday, January 1</div>
+            <div class="time" id="time">12:00</div>
+            <div class="seconds" id="seconds">00</div>
+        </div>
+        
+        <div class="settings">⚙️</div>
+        <button class="fullscreen-btn" id="fullscreen-btn">⤢</button>
+    </div>
+    
+    <div class="settings-panel">
+        <div class="close-settings">✕</div>
+        
+        <div class="settings-option">
+            <label>24-Hour Format</label>
+            <input type="checkbox" id="format-toggle">
+        </div>
+        
+        <div class="settings-option">
+            <label>Show Seconds</label>
+            <input type="checkbox" id="seconds-toggle" checked>
+        </div>
+        
+        <div class="settings-option">
+            <label>Night Mode</label>
+            <input type="checkbox" id="night-mode-toggle">
+        </div>
+        
+        <div class="settings-option">
+            <label>Color Theme</label>
+        </div>
+        
+        <div class="color-options">
+            <div class="color-option active" style="background-color: #fff;" data-color="#fff"></div>
+            <div class="color-option" style="background-color: #ff5252;" data-color="#ff5252"></div>
+            <div class="color-option" style="background-color: #4caf50;" data-color="#4caf50"></div>
+            <div class="color-option" style="background-color: #2196f3;" data-color="#2196f3"></div>
+            <div class="color-option" style="background-color: #ff9800;" data-color="#ff9800"></div>
+            <div class="color-option" style="background-color: #9c27b0;" data-color="#9c27b0"></div>
+        </div>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const timeElement = document.getElementById('time');
+        const dateElement = document.getElementById('date');
+        const secondsElement = document.getElementById('seconds');
+        const settingsBtn = document.querySelector('.settings');
+        const closeSettingsBtn = document.querySelector('.close-settings');
+        const settingsPanel = document.querySelector('.settings-panel');
+        const formatToggle = document.getElementById('format-toggle');
+        const secondsToggle = document.getElementById('seconds-toggle');
+        const nightModeToggle = document.getElementById('night-mode-toggle');
+        const colorOptions = document.querySelectorAll('.color-option');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const batteryPercentage = document.getElementById('battery-percentage');
+        const batteryLevel = document.getElementById('battery-level');
+        
+        // Clock Settings
+        let settings = {
+            is24Hour: false,
+            showSeconds: true,
+            nightMode: false,
+            color: '#fff'
+        };
+        
+        // Load settings from localStorage if available
+        if (localStorage.getItem('clockSettings')) {
+            settings = JSON.parse(localStorage.getItem('clockSettings'));
+            applySettings();
+        }
+        
+        // Update clock
+        function updateClock() {
+            const now = new Date();
+            
+            // Format time
+            let hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            
+            if (!settings.is24Hour) {
+                hours = hours % 12;
+                hours = hours ? hours : 12; // Convert 0 to 12 for 12-hour format
+            }
+            
+            const timeString = `${hours}:${minutes}`;
+            timeElement.textContent = timeString;
+            secondsElement.textContent = seconds;
+            
+            // Format date
+            const options = { weekday: 'long', month: 'long', day: 'numeric' };
+            const dateString = now.toLocaleDateString(undefined, options);
+            dateElement.textContent = dateString;
+        }
+        
+        // Apply settings
+        function applySettings() {
+            // Apply 24-hour format
+            formatToggle.checked = settings.is24Hour;
+            
+            // Apply seconds visibility
+            secondsToggle.checked = settings.showSeconds;
+            secondsElement.style.display = settings.showSeconds ? 'block' : 'none';
+            
+            // Apply night mode
+            nightModeToggle.checked = settings.nightMode;
+            document.body.classList.toggle('night-mode', settings.nightMode);
+            
+            // Apply color theme
+            document.documentElement.style.setProperty('--text-color', settings.color);
+            document.body.style.color = settings.color;
+            
+            colorOptions.forEach(option => {
+                if (option.dataset.color === settings.color) {
+                    option.classList.add('active');
+                } else {
+                    option.classList.remove('active');
+                }
+            });
+            
+            // Save settings to localStorage
+            localStorage.setItem('clockSettings', JSON.stringify(settings));
+        }
+        
+        // Event Listeners
+        settingsBtn.addEventListener('click', () => {
+            settingsPanel.classList.add('active');
+        });
+        
+        closeSettingsBtn.addEventListener('click', () => {
+            settingsPanel.classList.remove('active');
+        });
+        
+        formatToggle.addEventListener('change', () => {
+            settings.is24Hour = formatToggle.checked;
+            applySettings();
+            updateClock();
+        });
+        
+        secondsToggle.addEventListener('change', () => {
+            settings.showSeconds = secondsToggle.checked;
+            applySettings();
+        });
+        
+        nightModeToggle.addEventListener('change', () => {
+            settings.nightMode = nightModeToggle.checked;
+            applySettings();
+        });
+        
+        colorOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                settings.color = option.dataset.color;
+                applySettings();
+            });
+        });
+        
+        // Fullscreen functionality
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+        
+        // Battery API (if available)
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then(battery => {
+                // Update battery display
+                function updateBattery() {
+                    const level = Math.floor(battery.level * 100);
+                    batteryPercentage.textContent = `${level}%`;
+                    batteryLevel.style.width = `${30 * battery.level}px`;
+                }
+                
+                // Initial battery update
+                updateBattery();
+                
+                // Battery event listeners
+                battery.addEventListener('levelchange', updateBattery);
+            });
+        } else {
+            // Hide battery indicator if API not available
+            document.querySelector('.battery-indicator').style.display = 'none';
+        }
+        
+        // Multiple approaches to prevent screen from sleeping
+        
+        // 1. Wake Lock API (modern browsers)
+        if ('wakeLock' in navigator) {
+            let wakeLock = null;
+            
+            const requestWakeLock = async () => {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock activated');
+                } catch (err) {
+                    console.log(`Wake Lock error: ${err.message}`);
+                }
+            };
+            
+            // Request wake lock when page loads
+            requestWakeLock();
+            
+            // Re-request wake lock when document becomes visible again
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && wakeLock === null) {
+                    requestWakeLock();
+                }
+            });
+        }
+        
+        // 2. NoSleep.js approach (fallback)
+        // Create a video element that constantly loops (tricks iOS into keeping screen on)
+        const video = document.createElement('video');
+        video.setAttribute('loop', '');
+        video.setAttribute('playsinline', '');
+        video.setAttribute('muted', '');
+        video.setAttribute('width', '1');
+        video.setAttribute('height', '1');
+        video.style.position = 'absolute';
+        video.style.top = '0';
+        video.style.left = '0';
+        video.style.width = '1px';
+        video.style.height = '1px';
+        video.style.opacity = '0.01';
+        
+        // Create a minimal black video (this is a data URI for a minimal MP4)
+        const videoSource = document.createElement('source');
+        videoSource.setAttribute('src', 'data:video/mp4;base64,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');
+        videoSource.setAttribute('type', 'video/mp4');
+        video.appendChild(videoSource);
+        
+        document.body.appendChild(video);
+        
+        // Play the video when user interacts with the page
+        document.addEventListener('click', () => {
+            video.play();
+            console.log('Video playing to keep screen on');
+        });
+        
+        // Also play the video when the page loads
+        window.addEventListener('load', () => {
+            // A slight delay to ensure the browser is ready
+            setTimeout(() => {
+                video.play().catch(e => console.log('Auto-play prevented:', e));
+                console.log('Attempting to auto-play video');
+            }, 1000);
+        });
+        
+        // 3. Use periodic DOM updates
+        // Create a tiny, invisible element that updates its content periodically
+        const keepAliveElement = document.createElement('div');
+        keepAliveElement.style.position = 'absolute';
+        keepAliveElement.style.top = '-1px';
+        keepAliveElement.style.left = '-1px';
+        keepAliveElement.style.width = '1px';
+        keepAliveElement.style.height = '1px';
+        keepAliveElement.style.opacity = '0.01';
+        document.body.appendChild(keepAliveElement);
+        
+        // Update the element periodically to trigger repaints
+        setInterval(() => {
+            keepAliveElement.innerText = new Date().getTime().toString();
+        }, 500);
+        
+        // Initialize clock
+        updateClock();
+        setInterval(updateClock, 1000);
+        
+        // Add iOS web app support
+        if (window.navigator.standalone) {
+            document.body.classList.add('standalone');
+        }
+        
+        // Double tap to enter/exit fullscreen
+        let lastTap = 0;
+        document.addEventListener('touchend', (e) => {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            
+            if (tapLength < 500 && tapLength > 0) {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                    });
+                } else {
+                    document.exitFullscreen();
+                }
+                e.preventDefault();
+            }
+            
+            lastTap = currentTime;
+        });
+    </script>
+</body>
+</html>
