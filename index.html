@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Clock">
     <meta name="format-detection" content="telephone=no">
-    <title>iPhone 5 Clock</title>
+    <title>Responsive Clock</title>
     <style>
         * {
             margin: 0;
@@ -31,11 +31,9 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            /* iPhone 5 has 1136x640 resolution */
-            max-width: 640px;
-            max-height: 1136px;
             margin: 0 auto;
             padding: 20px;
+            position: relative;
         }
         
         .clock-container {
@@ -45,38 +43,55 @@
             align-items: center;
             width: 100%;
             height: 100%;
+            transition: all 0.3s ease;
         }
         
         .time {
-            font-size: 5rem;
+            font-size: clamp(3rem, 15vw, 6rem);
             font-weight: 200;
             margin-bottom: 10px;
             text-align: center;
+            transition: font-size 0.3s ease;
         }
         
         .date {
-            font-size: 1.5rem;
+            font-size: clamp(1rem, 5vw, 1.8rem);
             font-weight: 300;
             margin-bottom: 20px;
             text-align: center;
+            transition: font-size 0.3s ease;
         }
         
         .seconds {
-            font-size: 3rem;
+            font-size: clamp(1.5rem, 8vw, 3rem);
             font-weight: 200;
             margin-top: 10px;
+            transition: font-size 0.3s ease;
+        }
+        
+        .ui-controls {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allow clicks to pass through */
+        }
+        
+        .ui-controls > * {
+            pointer-events: auto; /* Re-enable clicks for children */
         }
         
         .settings {
             position: absolute;
             top: 20px;
             right: 20px;
-            font-size: 1.5rem;
+            font-size: clamp(1.2rem, 5vw, 1.8rem);
             cursor: pointer;
+            z-index: 5;
+            transition: all 0.3s ease;
         }
         
         .settings-panel {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -94,72 +109,77 @@
             display: flex;
         }
         
+        .settings-panel-content {
+            width: 90%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
         .settings-option {
-            margin: 10px 0;
-            width: 80%;
+            margin: 5px 0;
+            width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
         .settings-option label {
-            font-size: 1.2rem;
+            font-size: clamp(1rem, 4vw, 1.2rem);
         }
         
         .close-settings {
             position: absolute;
             top: 20px;
             right: 20px;
-            font-size: 1.5rem;
+            font-size: clamp(1.2rem, 5vw, 1.8rem);
             cursor: pointer;
+            z-index: 15;
         }
         
         .color-options {
             display: flex;
             flex-wrap: wrap;
+            gap: 10px;
             justify-content: center;
-            margin-top: 20px;
+            margin-top: 10px;
         }
         
         .color-option {
-            width: 40px;
-            height: 40px;
+            width: clamp(30px, 8vw, 40px);
+            height: clamp(30px, 8vw, 40px);
             border-radius: 50%;
-            margin: 5px;
             cursor: pointer;
             border: 2px solid transparent;
+            transition: transform 0.2s ease;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.1);
         }
         
         .color-option.active {
             border-color: white;
         }
         
-        /* Landscape orientation adjustments for iPhone 5 */
-        @media screen and (orientation: landscape) {
-            .time {
-                font-size: 3.5rem;
-            }
-            
-            .date {
-                font-size: 1.2rem;
-            }
-            
-            .seconds {
-                font-size: 2rem;
-            }
-        }
-        
-        /* Full screen button */
+        /* Fullscreen button */
         .fullscreen-btn {
             position: absolute;
             bottom: 20px;
             right: 20px;
-            font-size: 1.5rem;
+            font-size: clamp(1.2rem, 5vw, 1.8rem);
             background: none;
             border: none;
             color: white;
             cursor: pointer;
             opacity: 0.5;
+            transition: opacity 0.3s ease;
+            z-index: 5;
+        }
+        
+        .fullscreen-btn:hover {
+            opacity: 1;
         }
         
         /* Night mode */
@@ -173,14 +193,16 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            font-size: 1rem;
+            font-size: clamp(0.8rem, 3vw, 1rem);
             display: flex;
             align-items: center;
+            z-index: 5;
+            transition: all 0.3s ease;
         }
         
         .battery-level {
-            width: 30px;
-            height: 15px;
+            width: clamp(20px, 6vw, 30px);
+            height: clamp(10px, 3vw, 15px);
             border: 1px solid currentColor;
             margin-left: 5px;
             position: relative;
@@ -191,57 +213,162 @@
             position: absolute;
             top: 1px;
             left: 1px;
-            height: 11px;
+            height: calc(100% - 2px);
             background-color: currentColor;
+            transition: width 0.5s ease;
+        }
+        
+        /* Landscape orientation adjustments */
+        @media screen and (orientation: landscape) {
+            .clock-container {
+                flex-direction: row;
+                justify-content: space-evenly;
+                align-items: center;
+                gap: 20px;
+            }
+            
+            .date-time-container {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+            
+            .time {
+                font-size: clamp(2.5rem, 12vw, 4rem);
+                margin-bottom: 5px;
+            }
+            
+            .date {
+                font-size: clamp(0.9rem, 3vw, 1.2rem);
+                margin-bottom: 5px;
+            }
+            
+            .seconds {
+                font-size: clamp(1.2rem, 8vh, 2.5rem);
+                margin-top: 0;
+            }
+            
+            .battery-indicator {
+                top: 10px;
+                left: 10px;
+            }
+            
+            .settings {
+                top: 10px;
+                right: 10px;
+            }
+            
+            .fullscreen-btn {
+                bottom: 10px;
+                right: 10px;
+            }
+            
+            .settings-panel-content {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                max-width: 90%;
+                gap: 20px;
+            }
+            
+            .settings-option {
+                width: auto;
+                min-width: 150px;
+            }
+        }
+        
+        /* Small screen adjustments */
+        @media screen and (max-height: 400px) and (orientation: landscape) {
+            .time {
+                font-size: clamp(2rem, 10vh, 3rem);
+            }
+            
+            .date {
+                font-size: clamp(0.8rem, 2vh, 1rem);
+            }
+            
+            .seconds {
+                font-size: clamp(1rem, 8vh, 2rem);
+            }
+        }
+        
+        /* Animation for orientation change */
+        @media (prefers-reduced-motion: no-preference) {
+            .clock-container,
+            .battery-indicator,
+            .settings,
+            .fullscreen-btn {
+                transition: all 0.5s ease;
+            }
+        }
+        
+        /* Add iOS standalone mode improvements */
+        .standalone .container {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+        
+        /* Tap highlight adjustment */
+        * {
+            -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="battery-indicator">
-            <span id="battery-percentage">--</span>
-            <div class="battery-level" id="battery-level"></div>
+        <div class="ui-controls">
+            <div class="battery-indicator">
+                <span id="battery-percentage">--</span>
+                <div class="battery-level" id="battery-level"></div>
+            </div>
+            
+            <div class="settings">⚙️</div>
+            <button class="fullscreen-btn" id="fullscreen-btn">⤢</button>
         </div>
         
         <div class="clock-container">
-            <div class="date" id="date">Monday, January 1</div>
-            <div class="time" id="time">12:00</div>
+            <div class="date-time-container">
+                <div class="date" id="date">Monday, January 1</div>
+                <div class="time" id="time">12:00</div>
+            </div>
             <div class="seconds" id="seconds">00</div>
         </div>
-        
-        <div class="settings">⚙️</div>
-        <button class="fullscreen-btn" id="fullscreen-btn">⤢</button>
     </div>
     
     <div class="settings-panel">
         <div class="close-settings">✕</div>
         
-        <div class="settings-option">
-            <label>24-Hour Format</label>
-            <input type="checkbox" id="format-toggle">
-        </div>
-        
-        <div class="settings-option">
-            <label>Show Seconds</label>
-            <input type="checkbox" id="seconds-toggle" checked>
-        </div>
-        
-        <div class="settings-option">
-            <label>Night Mode</label>
-            <input type="checkbox" id="night-mode-toggle">
-        </div>
-        
-        <div class="settings-option">
-            <label>Color Theme</label>
-        </div>
-        
-        <div class="color-options">
-            <div class="color-option active" style="background-color: #fff;" data-color="#fff"></div>
-            <div class="color-option" style="background-color: #ff5252;" data-color="#ff5252"></div>
-            <div class="color-option" style="background-color: #4caf50;" data-color="#4caf50"></div>
-            <div class="color-option" style="background-color: #2196f3;" data-color="#2196f3"></div>
-            <div class="color-option" style="background-color: #ff9800;" data-color="#ff9800"></div>
-            <div class="color-option" style="background-color: #9c27b0;" data-color="#9c27b0"></div>
+        <div class="settings-panel-content">
+            <div class="settings-option">
+                <label>24-Hour Format</label>
+                <input type="checkbox" id="format-toggle">
+            </div>
+            
+            <div class="settings-option">
+                <label>Show Seconds</label>
+                <input type="checkbox" id="seconds-toggle" checked>
+            </div>
+            
+            <div class="settings-option">
+                <label>Night Mode</label>
+                <input type="checkbox" id="night-mode-toggle">
+            </div>
+            
+            <div class="settings-option" style="width: 100%;">
+                <label>Color Theme</label>
+            </div>
+            
+            <div class="color-options">
+                <div class="color-option active" style="background-color: #fff;" data-color="#fff"></div>
+                <div class="color-option" style="background-color: #ff5252;" data-color="#ff5252"></div>
+                <div class="color-option" style="background-color: #4caf50;" data-color="#4caf50"></div>
+                <div class="color-option" style="background-color: #2196f3;" data-color="#2196f3"></div>
+                <div class="color-option" style="background-color: #ff9800;" data-color="#ff9800"></div>
+                <div class="color-option" style="background-color: #9c27b0;" data-color="#9c27b0"></div>
+            </div>
         </div>
     </div>
     
@@ -274,6 +401,17 @@
             settings = JSON.parse(localStorage.getItem('clockSettings'));
             applySettings();
         }
+        
+        // Detect and handle orientation changes
+        function handleOrientationChange() {
+            const isLandscape = window.innerWidth > window.innerHeight;
+            document.body.classList.toggle('landscape', isLandscape);
+            document.body.classList.toggle('portrait', !isLandscape);
+        }
+        
+        // Call initially and on resize
+        handleOrientationChange();
+        window.addEventListener('resize', handleOrientationChange);
         
         // Update clock
         function updateClock() {
@@ -378,7 +516,7 @@
                 function updateBattery() {
                     const level = Math.floor(battery.level * 100);
                     batteryPercentage.textContent = `${level}%`;
-                    batteryLevel.style.width = `${30 * battery.level}px`;
+                    batteryLevel.querySelector(':after').style.width = `${(batteryLevel.offsetWidth - 2) * battery.level}px`;
                 }
                 
                 // Initial battery update
@@ -392,85 +530,76 @@
             document.querySelector('.battery-indicator').style.display = 'none';
         }
         
-        // Multiple approaches to prevent screen from sleeping
+        // Keep screen awake - simplified approach combining Wake Lock API and fallback
         
         // 1. Wake Lock API (modern browsers)
-        if ('wakeLock' in navigator) {
-            let wakeLock = null;
-            
-            const requestWakeLock = async () => {
+        let wakeLock = null;
+        
+        const requestWakeLock = async () => {
+            if ('wakeLock' in navigator) {
                 try {
                     wakeLock = await navigator.wakeLock.request('screen');
                     console.log('Wake Lock activated');
                 } catch (err) {
                     console.log(`Wake Lock error: ${err.message}`);
+                    // Fall back to video method if Wake Lock fails
+                    enableVideoWakeLock();
                 }
+            } else {
+                // Fall back to video method if Wake Lock not supported
+                enableVideoWakeLock();
+            }
+        };
+        
+        // 2. Video fallback method
+        function enableVideoWakeLock() {
+            // Create a video element with minimal black video
+            const video = document.createElement('video');
+            video.setAttribute('loop', '');
+            video.setAttribute('playsinline', '');
+            video.setAttribute('muted', true);
+            video.setAttribute('width', '1');
+            video.setAttribute('height', '1');
+            video.style.position = 'absolute';
+            video.style.top = '0';
+            video.style.left = '0';
+            video.style.width = '1px';
+            video.style.height = '1px';
+            video.style.opacity = '0.01';
+            
+            // Create a minimal black video (this is a data URI for a minimal MP4)
+            const videoSource = document.createElement('source');
+            videoSource.setAttribute('src', 'data:video/mp4;base64,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');
+            videoSource.setAttribute('type', 'video/mp4');
+            video.appendChild(videoSource);
+            
+            document.body.appendChild(video);
+            
+            // Try to play video
+            const playVideo = () => {
+                video.play().catch(e => console.log('Video play prevented:', e));
             };
             
-            // Request wake lock when page loads
-            requestWakeLock();
+            // Play on interaction and periodically
+            document.addEventListener('click', playVideo, { once: true });
+            document.addEventListener('touchstart', playVideo, { once: true });
             
-            // Re-request wake lock when document becomes visible again
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible' && wakeLock === null) {
-                    requestWakeLock();
-                }
-            });
+            // Also try to play the video initially
+            playVideo();
+            
+            // Re-attempt periodically
+            setInterval(playVideo, 30000);
         }
         
-        // 2. NoSleep.js approach (fallback)
-        // Create a video element that constantly loops (tricks iOS into keeping screen on)
-        const video = document.createElement('video');
-        video.setAttribute('loop', '');
-        video.setAttribute('playsinline', '');
-        video.setAttribute('muted', '');
-        video.setAttribute('width', '1');
-        video.setAttribute('height', '1');
-        video.style.position = 'absolute';
-        video.style.top = '0';
-        video.style.left = '0';
-        video.style.width = '1px';
-        video.style.height = '1px';
-        video.style.opacity = '0.01';
-        
-        // Create a minimal black video (this is a data URI for a minimal MP4)
-        const videoSource = document.createElement('source');
-        videoSource.setAttribute('src', 'data:video/mp4;base64,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');
-        videoSource.setAttribute('type', 'video/mp4');
-        video.appendChild(videoSource);
-        
-        document.body.appendChild(video);
-        
-        // Play the video when user interacts with the page
-        document.addEventListener('click', () => {
-            video.play();
-            console.log('Video playing to keep screen on');
+        // Request wake lock when page loads and when document becomes visible
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && (!wakeLock || wakeLock.released)) {
+                requestWakeLock();
+            }
         });
         
-        // Also play the video when the page loads
-        window.addEventListener('load', () => {
-            // A slight delay to ensure the browser is ready
-            setTimeout(() => {
-                video.play().catch(e => console.log('Auto-play prevented:', e));
-                console.log('Attempting to auto-play video');
-            }, 1000);
-        });
-        
-        // 3. Use periodic DOM updates
-        // Create a tiny, invisible element that updates its content periodically
-        const keepAliveElement = document.createElement('div');
-        keepAliveElement.style.position = 'absolute';
-        keepAliveElement.style.top = '-1px';
-        keepAliveElement.style.left = '-1px';
-        keepAliveElement.style.width = '1px';
-        keepAliveElement.style.height = '1px';
-        keepAliveElement.style.opacity = '0.01';
-        document.body.appendChild(keepAliveElement);
-        
-        // Update the element periodically to trigger repaints
-        setInterval(() => {
-            keepAliveElement.innerText = new Date().getTime().toString();
-        }, 500);
+        // Initial wake lock request
+        requestWakeLock();
         
         // Initialize clock
         updateClock();
@@ -499,6 +628,39 @@
             }
             
             lastTap = currentTime;
+        });
+        
+        // Fix for battery indicator
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then(battery => {
+                // Fix the battery level indicator properly
+                function updateBatteryLevel() {
+                    const level = Math.floor(battery.level * 100);
+                    batteryPercentage.textContent = `${level}%`;
+                    
+                    // Update the width of the :after pseudo-element
+                    // Since we can't directly modify pseudo-elements with JS,
+                    // we use inline style width as a percentage
+                    const batteryFill = document.getElementById('battery-level');
+                    batteryFill.style.setProperty('--battery-width', `${level}%`);
+                    
+                    // Fallback approach - update via CSS variable
+                    document.documentElement.style.setProperty('--battery-level', `${level}%`);
+                }
+                
+                updateBatteryLevel();
+                battery.addEventListener('levelchange', updateBatteryLevel);
+            });
+        }
+        
+        // Handle settings panel on orientation change
+        window.addEventListener('orientationchange', () => {
+            // Close settings panel on orientation change for better UX
+            if (settingsPanel.classList.contains('active')) {
+                setTimeout(() => {
+                    settingsPanel.classList.remove('active');
+                }, 300);
+            }
         });
     </script>
 </body>
