@@ -2,8 +2,6 @@
 
 A digital clock web application optimized as a Progressive Web App (PWA) for iPhone 5 running iOS 10.3.4.
 
-![Clock App Screenshot](https://via.placeholder.com/320x568/000000/FFFFFF/?text=iPhone+5+Clock)
-
 ## Features
 
 - **Full-screen clock** with date display
