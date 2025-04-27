@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Clock">
+    <title>iPhone 5 Clock - Offline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            max-width: 640px;
+            max-height: 1136px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .offline-message {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .clock-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .time {
+            font-size: 5rem;
+            font-weight: 200;
+            margin-bottom: 10px;
+        }
+        
+        .date {
+            font-size: 1.5rem;
+            font-weight: 300;
+            margin-bottom: 20px;
+        }
+        
+        .reload-btn {
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1rem;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="offline-message">You are currently offline</div>
+        
+        <div class="clock-container">
+            <div class="date" id="date">Monday, January 1</div>
+            <div class="time" id="time">12:00</div>
+        </div>
+        
+        <button class="reload-btn" onclick="window.location.reload()">Try Again</button>
+    </div>
+    
+    <script>
+        // Basic clock functionality that works offline
+        function updateClock() {
+            const now = new Date();
+            
+            // Format time
+            let hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            
+            // Check for 24-hour format preference in localStorage
+            const settings = localStorage.getItem('clockSettings') ? 
+                JSON.parse(localStorage.getItem('clockSettings')) : 
+                { is24Hour: false };
+            
+            if (!settings.is24Hour) {
+                hours = hours % 12;
+                hours = hours ? hours : 12; // Convert 0 to 12 for 12-hour format
+            }
+            
+            const timeString = `${hours}:${minutes}`;
+            document.getElementById('time').textContent = timeString;
+            
+            // Format date
+            const options = { weekday: 'long', month: 'long', day: 'numeric' };
+            const dateString = now.toLocaleDateString(undefined, options);
+            document.getElementById('date').textContent = dateString;
+        }
+        
+        // Initialize clock
+        updateClock();
+        setInterval(updateClock, 1000);
+        
+        // Check if we're back online
+        window.addEventListener('online', () => {
+            // Redirect to main page if we're back online
+            window.location.href = '/';
+        });
+    </script>
+</body>
+</html>

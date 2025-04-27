@@ -1,6 +1,23 @@
 {
-    "version": 2,
-    "builds": [
-      { "src": "*.html", "use": "@vercel/static" }
-    ]
-  }
+  "version": 2,
+  "builds": [
+    { "src": "*.html", "use": "@vercel/static" },
+    { "src": "*.appcache", "use": "@vercel/static" },
+    { "src": "icons/**", "use": "@vercel/static" },
+    { "src": "splash/**", "use": "@vercel/static" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/clock.appcache",
+      "headers": [
+        { "key": "Content-Type", "value": "text/cache-manifest" }
+      ]
+    }
+  ]
+}

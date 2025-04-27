@@ -1,12 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" manifest="clock.appcache">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- iOS PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Clock">
     <meta name="format-detection" content="telephone=no">
+    
+    <!-- Home Screen Icons -->
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="icons/apple-touch-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="icons/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180x180.png">
+    
+    <!-- Splash Screens -->
+    <!-- iPhone 5 (640x1136) -->
+    <link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" href="splash/apple-touch-startup-image-640x1136.png">
+    
     <title>iPhone 5 Clock</title>
     <style>
         * {
@@ -194,6 +208,63 @@
             height: 11px;
             background-color: currentColor;
         }
+        
+        /* Offline status indicator */
+        .offline-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 1rem;
+            opacity: 0;
+            background-color: rgba(255, 0, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: opacity 0.3s ease;
+        }
+        
+        .offline-indicator.visible {
+            opacity: 1;
+        }
+        
+        /* First-time install popup */
+        .install-popup {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            width: 85%;
+            max-width: 320px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 100;
+        }
+        
+        .install-popup.active {
+            display: block;
+        }
+        
+        .install-popup p {
+            margin: 0 0 15px 0;
+            text-align: center;
+        }
+        
+        .install-popup img {
+            width: 100%;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        
+        .install-popup .close-popup {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -211,6 +282,8 @@
         
         <div class="settings">⚙️</div>
         <button class="fullscreen-btn" id="fullscreen-btn">⤢</button>
+        
+        <div class="offline-indicator" id="offline-indicator">Offline</div>
     </div>
     
     <div class="settings-panel">
@@ -245,6 +318,16 @@
         </div>
     </div>
     
+    <!-- First-time install popup -->
+    <div class="install-popup" id="install-popup">
+        <div class="close-popup">✕</div>
+        <p>Add this clock to your home screen for the best experience:</p>
+        <p>
+            1. Tap <strong>Share</strong> <span style="font-size: 1.2em;">📤</span><br>
+            2. Scroll and tap <strong>Add to Home Screen</strong> <span style="font-size: 1.2em;">➕</span>
+        </p>
+    </div>
+    
     <script>
         // DOM Elements
         const timeElement = document.getElementById('time');
@@ -260,6 +343,9 @@
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         const batteryPercentage = document.getElementById('battery-percentage');
         const batteryLevel = document.getElementById('battery-level');
+        const offlineIndicator = document.getElementById('offline-indicator');
+        const installPopup = document.getElementById('install-popup');
+        const closePopupBtn = document.querySelector('.close-popup');
         
         // Clock Settings
         let settings = {
@@ -392,6 +478,21 @@
             document.querySelector('.battery-indicator').style.display = 'none';
         }
         
+        // Offline detection
+        function updateOnlineStatus() {
+            if (navigator.onLine) {
+                offlineIndicator.classList.remove('visible');
+            } else {
+                offlineIndicator.classList.add('visible');
+            }
+        }
+        
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        
+        // Initial check
+        updateOnlineStatus();
+        
         // Multiple approaches to prevent screen from sleeping
         
         // 1. Wake Lock API (modern browsers)
@@ -476,10 +577,28 @@
         updateClock();
         setInterval(updateClock, 1000);
         
-        // Add iOS web app support
-        if (window.navigator.standalone) {
-            document.body.classList.add('standalone');
+        // Add iOS web app support checks
+        const isStandalone = window.navigator.standalone;
+        const isHomescreenVisit = localStorage.getItem('installed') === 'true';
+        
+        // If this is a web app but first visit, mark as installed
+        if (isStandalone && !isHomescreenVisit) {
+            localStorage.setItem('installed', 'true');
         }
+        
+        // Show install popup if not standalone and not previously dismissed
+        if (!isStandalone && !isHomescreenVisit && !localStorage.getItem('popupDismissed')) {
+            // Delay popup to not annoy user immediately
+            setTimeout(() => {
+                installPopup.classList.add('active');
+            }, 5000);
+        }
+        
+        // Close install popup
+        closePopupBtn.addEventListener('click', () => {
+            installPopup.classList.remove('active');
+            localStorage.setItem('popupDismissed', 'true');
+        });
         
         // Double tap to enter/exit fullscreen
         let lastTap = 0;
@@ -500,6 +619,36 @@
             
             lastTap = currentTime;
         });
+        
+        // AppCache event listeners
+        if (window.applicationCache) {
+            // Log AppCache events for debugging
+            const appCacheEvents = [
+                'cached', 'checking', 'downloading', 'error',
+                'noupdate', 'obsolete', 'progress', 'updateready'
+            ];
+            
+            appCacheEvents.forEach(eventName => {
+                window.applicationCache.addEventListener(eventName, e => {
+                    console.log('AppCache event:', eventName);
+                    
+                    if (eventName === 'updateready') {
+                        // If an update is ready, apply it
+                        try {
+                            window.applicationCache.swapCache();
+                            console.log('AppCache: New version available and swapped.');
+                            
+                            // Optionally alert the user or automatically reload
+                            if (confirm('A new version of this app is available. Load it now?')) {
+                                window.location.reload();
+                            }
+                        } catch (err) {
+                            console.error('AppCache swap failed:', err);
+                        }
+                    }
+                });
+            });
+        }
     </script>
 </body>
 </html>
